@@ -1,6 +1,6 @@
 const express = require("express")
 require('dotenv').config();
-const holdingModel = require('../backend/model and schema/holding')
+const holdingModel = require('./model and schema/holding')
 const watchData = require('./model and schema/watchList')
 const app = express();
 const mongoose = require('mongoose');
