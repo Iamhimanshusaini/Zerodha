@@ -40,8 +40,7 @@ app.post('/login', async (req, res) => {
         }
         const isPasswordValid = await bcrypt.compare(password, existUser.password)
         if (!isPasswordValid) {
-            throw new Error('inccorect password')
-            res.json({ message: "Invalid password ❌" });
+            return res.json({ message: "Invalid password ❌" });
         }
         if (isPasswordValid) {
             const token = jwt.sign({
@@ -56,7 +55,8 @@ app.post('/login', async (req, res) => {
             )
             return res.status(200).json({
                 user: existUser,
-                token: token
+                token: token,
+                message: `Hi ${existUser.name} you are Logined..`
 
             })
         }
@@ -64,7 +64,6 @@ app.post('/login', async (req, res) => {
     }
     catch (error) {
         res.status(401).json({ message: 'invaild credils' })
-        console.log('galt hai data')
     }
 })
 app.post('/register', async (req, res) => {
@@ -101,14 +100,13 @@ app.post('/neworder', authCheck, async (req, res) => {
         // console.log(name, qty, price, userId)
         // console.log(user.userId)
         const newOrder = await new order({
-            name: name,
+            name: "SBI",
             qty: qty,
             price: price,
             userId: req.userId,
             mode: 'buy'
         })
         const saveOrder = await newOrder.save()
-        console.log(saveOrder)
         return res.status(201).json({
             message: 'new order created succesfuly',
             data: newOrder
@@ -120,6 +118,83 @@ app.post('/neworder', authCheck, async (req, res) => {
     }
 
 
+})
+
+// user Update data from mogoDb route
+
+app.post('/forrgot', async (req, res) => {
+    try {
+        let { email, password } = req.body
+        const newPassword = await bcrypt.hash(password, 10)
+        let userForgot = await user.findOneAndUpdate({ email }, { password: newPassword })
+        if (!userForgot) {
+            return res.status(401).json({
+                message: 'user not find'
+            })
+        }
+        return res.status(201).json({
+            message: 'user updated'
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            error: error.message
+        });
+    }
+})
+// fetch userData data from mogoDb route
+app.get('/profile/:id', async (req, res) => {
+    try {
+        const { id } = req.params
+        const userData = await user.findById(id)
+        if (!userData) {
+            res.status(401).json({
+                message: "user not found"
+            })
+        }
+        return res.status(201).json({
+            message: `Hi ${userData.name}`,
+            data: userData
+        })
+    } catch (error) {
+        res.status(401).json({
+            message: "somethinigs went worng",
+            error: error.message
+        })
+    }
+})
+// user profile data updated
+
+app.patch('/profile/:id', async (req, res) => {
+    try {
+        const { id } = req.params
+        const { name, email } = req.body;
+        console.log(name, email)
+        const updateData = await user.findByIdAndUpdate(
+            id,
+            {
+                name: name,
+                email: email
+            },
+            { new: true }
+        )
+        console.log(updateData)
+        if (!updateData) {
+            res.status(401).json({
+                message: "user not found"
+            })
+        }
+        return res.status(201).json({
+            message: `Hi ${updateData.name}`,
+            data: updateData
+        })
+    } catch (error) {
+        res.status(401).json({
+            message: "somethinigs went worng",
+            error: error.message
+        })
+    }
 })
 // fetch holding data from mogoDb route
 
@@ -135,14 +210,14 @@ app.get('/allposition', async (req, res) => {
 })
 // fetch watchlist data from mogoDb route
 
-app.get('/wat', async (req, res) => {
-    const saveWatchlist = await watchData.insertMany(watchlist)
-    res.status(201).json({
-        message: "store data",
-        data: saveWatchlist
+// app.get('/', async (req, res) => {
+//     const saveWatchlist = await watchData.insertMany(watchlist)
+//     res.status(201).json({
+//         message: "store data",
+//         data: saveWatchlist
 
-    })
-})
+//     })
+// })
 // fetch Orders data from mogoDb route
 
 app.get('/orders', authCheck, async (req, res) => {
